@@ -1,0 +1,66 @@
+import io.qameta.allure.Description;
+import io.qameta.allure.junit4.DisplayName;
+import io.restassured.response.Response;
+import org.junit.After;
+import org.junit.Test;
+
+import static org.hamcrest.Matchers.equalTo;
+
+public class CreateCourierTest {
+
+    @Test
+    @DisplayName("Создание курьера")
+    @Description("Корректное создание курьера. Статус ответа 201.")
+    public void correctCreateCourierTest() {
+        Response response = Steps.createCourier("nafnaf", "123456", "Антон");
+        response.then()
+                .assertThat()
+                .statusCode(201)
+                .and()
+                .body("ok", equalTo(true));
+    }
+
+    @Test
+    @DisplayName("Попытка создания курьера без пароля")
+    @Description("Пытаемся создать курьера без указания пароля. Сатуст ответа 400. " +
+                "Сообщение: Недостаточно данных для создания учетной записи")
+    public void withoutPasswordCreateCourierTest() {
+        Response response = Steps.createCourier("nafnaf", "", "Антон");
+        response.then()
+                .assertThat()
+                .statusCode(400)
+                .and()
+                .body("message", equalTo("Недостаточно данных для создания учетной записи"));
+    }
+
+    @Test
+    @DisplayName("Попытка повторного использования логина")
+    @Description("Пытаемся создать курьера с логином, который уже используется. Сатуст ответа 409. " +
+                "Сообщение: Этот логин уже используется")
+    public void usedPasswordCreateCourierTest() {
+        Response response = Steps.createCourier("nafnaf", "123456", "Антон");
+        response.then()
+                .assertThat()
+                .statusCode(201)
+                .and()
+                .body("ok", equalTo(true));
+        response = Steps.createCourier("nafnaf", "123456", "Антон");
+        response.then()
+                .assertThat()
+                .statusCode(409)
+                .and()
+                .body("message", equalTo("Этот логин уже используется. Попробуйте другой."));
+    }
+
+    @After
+    public void deleteCourier() {
+            Response response = Steps.loginCourier("nafnaf", "123456");
+            int id;
+            try {
+                id = Steps.loginCourier("nafnaf", "123456").then().extract().path("id");
+            } catch (NullPointerException exception) {
+                return;
+            }
+            response = Steps.deleteCourier(id);
+    }
+}
