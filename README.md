@@ -8,3 +8,4 @@ Final project of sprint #7 QA-JAVA Yandex Practicum
 - JUnit 4
 - Rest assured
 - Allure
+- Java faker

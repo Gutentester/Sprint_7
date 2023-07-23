@@ -1,18 +1,33 @@
+import com.github.javafaker.Faker;
 import io.qameta.allure.Description;
 import io.qameta.allure.junit4.DisplayName;
 import io.restassured.response.Response;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import static org.hamcrest.Matchers.equalTo;
 
 public class CreateCourierTest {
 
+    private String login;
+    private String password;
+    private String name;
+
+    Faker faker = new Faker();
+
+    @Before
+    public void setUp() {
+        login = faker.name().username();
+        password = faker.internet().password();
+        name = faker.name().name();
+    }
+
     @Test
     @DisplayName("Создание курьера")
     @Description("Корректное создание курьера. Статус ответа 201.")
     public void correctCreateCourierTest() {
-        Response response = Steps.createCourier("nafnaf", "123456", "Антон");
+        Response response = Steps.createCourier(login, password, name);
         response.then()
                 .assertThat()
                 .statusCode(201)
@@ -25,7 +40,7 @@ public class CreateCourierTest {
     @Description("Пытаемся создать курьера без указания пароля. Сатуст ответа 400. " +
                 "Сообщение: Недостаточно данных для создания учетной записи")
     public void withoutPasswordCreateCourierTest() {
-        Response response = Steps.createCourier("nafnaf", "", "Антон");
+        Response response = Steps.createCourier(login, "", name);
         response.then()
                 .assertThat()
                 .statusCode(400)
@@ -38,13 +53,13 @@ public class CreateCourierTest {
     @Description("Пытаемся создать курьера с логином, который уже используется. Сатуст ответа 409. " +
                 "Сообщение: Этот логин уже используется")
     public void usedPasswordCreateCourierTest() {
-        Response response = Steps.createCourier("nafnaf", "123456", "Антон");
+        Response response = Steps.createCourier(login, password, name);
         response.then()
                 .assertThat()
                 .statusCode(201)
                 .and()
                 .body("ok", equalTo(true));
-        response = Steps.createCourier("nafnaf", "123456", "Антон");
+        response = Steps.createCourier(login, password, name);
         response.then()
                 .assertThat()
                 .statusCode(409)
@@ -54,10 +69,10 @@ public class CreateCourierTest {
 
     @After
     public void deleteCourier() {
-            Response response = Steps.loginCourier("nafnaf", "123456");
+            Response response = Steps.loginCourier(login, password);
             int id;
             try {
-                id = Steps.loginCourier("nafnaf", "123456").then().extract().path("id");
+                id = response.then().extract().path("id");
             } catch (NullPointerException exception) {
                 return;
             }
